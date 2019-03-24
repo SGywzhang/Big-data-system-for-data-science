@@ -166,7 +166,7 @@ class Assignment2 extends Serializable {
       else
       // sample the space uniformly from each language partition
         vectors.groupByKey.flatMap({
-          case (lang, vectors) => reservoirSampling(lang, vectors.toIterator, perLang).map((lang, _))
+          case (lang, vectors) => reservoirSampling(lang, vectors.toIterator, perDomain).map((lang, _))
         }).collect()
 
     assert(res.length == kmeansKernels, res.length)
