@@ -113,7 +113,7 @@ class Assignment2 extends Serializable {
   def vectorPostings(scored: RDD[(Posting, Int)]): RDD[(Int, Int)] = {
 
     //todo
-    def firstLangInTag(tag: String): Option[Int] = {
+    def firstDomainInTag(tag: String): Option[Int] = {
       val idx = Domains.indexOf(tag)
       if (idx >= 0) Some(idx) else None
     }
@@ -121,7 +121,7 @@ class Assignment2 extends Serializable {
     val vectors = for {
       (posting, score) <- scored
       tag <- posting.tags
-      idx <- firstLangInTag(tag)
+      idx <- firstDomainInTag(tag)
     } yield (idx * DomainSpread, score)
 
 
@@ -138,9 +138,9 @@ class Assignment2 extends Serializable {
     val perDomain = kmeansKernels / Domains.length
 
     //todo
-    def reservoirSampling(lang: Int, iter: Iterator[Int], size: Int): Array[Int] = {
+    def reservoirSampling(domain: Int, iter: Iterator[Int], size: Int): Array[Int] = {
       val res = new Array[Int](size)
-      val rnd = new util.Random(lang)
+      val rnd = new util.Random(domain)
 
       for (i <- 0 until size) {
         assert(iter.hasNext, s"iterator must have at least $size elements")
@@ -161,12 +161,10 @@ class Assignment2 extends Serializable {
 
     val res =
       if (DomainSpread < 500)
-      // sample the space regardless of the language
         vectors.takeSample(false, kmeansKernels, 42)
       else
-      // sample the space uniformly from each language partition
         vectors.groupByKey.flatMap({
-          case (lang, vectors) => reservoirSampling(lang, vectors.toIterator, perDomain).map((lang, _))
+          case (domain, vectors) => reservoirSampling(domain, vectors.toIterator, perDomain).map((domain, _))
         }).collect()
 
     assert(res.length == kmeansKernels, res.length)
