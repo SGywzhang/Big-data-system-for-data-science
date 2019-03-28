@@ -291,32 +291,40 @@ class Assignment2 extends Serializable {
     if (length % 2 == 0) (lower.last + upper.head) / 2 else upper.head
   }
 
+
+    def computeAverage(a: Iterable[(Int, Int)]):Double={
+    val s = a.map(x => x._2).toArray
+    val s_sorted = s.sortWith(_<_)
+    val length = s_sorted.length
+    s.sum / length
+  }
+
   //
   //
   //  Displaying results:
   //
   //
-  def clusterResults(means: Array[(Int, Int)], vectors: RDD[(Int, Int)]): Array[(String, Double, Int, Int)] = {
+  def clusterResults(means: Array[(Int, Int)], vectors: RDD[(Int, Int)]): Array[(String, Double, Int, Int,Double)] = {
     val closest = vectors.map(p => (findClosest(p, means), p))
     val closestGrouped = closest.groupByKey()
 
-    val median = closestGrouped.mapValues { vs =>
-      val DomainId: Int = vs.map(_._1).groupBy(identity).maxBy(_._2.size)._1 // most common domain in the cluster
+    val median = closestGrouped.mapValues { vs =>val DomainId: Int = vs.map(_._1).groupBy(identity).maxBy(_._2.size)._1 // most common domain in the cluster
     val DomainLabel: String   = Domains.apply(DomainId / DomainSpread) // most common domain in the cluster
     val clusterSize: Int    = vs.size
-      val DomainPercent: Double = vs.count(v => v._1 == DomainId) * 100d / clusterSize // percent of the questions in the most common domain
+    val DomainPercent: Double = vs.count(v => v._1 == DomainId) * 100d / clusterSize // percent of the questions in the most common domain
     val medianScore: Int    = computeMedian(vs)
+    val averageScore: Double = computeAverage(vs)
 
-      (DomainLabel, DomainPercent, clusterSize, medianScore)
+      (DomainLabel, DomainPercent, clusterSize, medianScore,averageScore)
     }
 
     median.collect().map(_._2).sortBy(_._4)
   }
 
-  def printResults(results: Array[(String, Double, Int, Int)]): Unit = {
+  def printResults(results: Array[(String, Double, Int, Int,Double)]): Unit = {
     println("Resulting clusters:")
-    println("  Score  Dominant Domain (%percent)  Questions")
+    println("  medianScore\taverageScore\tDominant Domain (%percent)\tQuestions")
     println("================================================")
-    for ((domain, percent, size, score) <- results)
-      println(f"${score}%7d  ${domain}%-17s (${percent}%-5.1f%%)      ${size}%7d")
+    for ((domain, percent, size, medianScore,averageScore) <- results)
+      println(f"${medianScore}%7d\t${averageScore}%.2f\t${domain}%-17s\t(${percent}%-5.1f%%)\t${size}%7d")
   }}
